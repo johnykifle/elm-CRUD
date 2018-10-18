@@ -1,0 +1,30 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "json-server",
+      "author": {
+          "name": "typicode",
+          "url": "https://github.com/typicode"
+      }
+    },
+    {
+      "id": 2,
+      "title": "http-server",
+      "author": {
+          "name": "john",
+          "url": "https://github.com/johnykifle"
+      }
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "some comment",
+      "postId": 1
+    }
+  ],
+  "profile": {
+    "name": "typicode"
+  }
+}
