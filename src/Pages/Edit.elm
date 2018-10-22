@@ -1,52 +1,62 @@
-module Pages.Edit exposing (..)
+module Pages.Edit exposing (view)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Types exposing (..)
+import Html.Attributes exposing (class, href, value)
+import Html.Events exposing (onClick)
+import Routes exposing (playersPath)
+import Shared exposing (..)
 
-view : Post -> Html Msg
-view post =
+view : List Player -> PlayerId -> Html.Html Msg
+view players playerId =
+    case findPlayer players playerId of
+        Just player ->
+            form player
+        
+        Nothing ->
+            div [] [ text "Player not found "]
+        
+findPlayer : List Player -> PlayerId -> Maybe Player
+findPlayer players playerId =
+    players
+        |> List.filter (\player -> player.id == playerId)
+        |> List.head
+
+form : Player -> Html.Html Msg
+form player =
     div []
-        [ h3 [] [ text "Edit page"]
-        , editForm post
+        [ h1 [] [ text player.name ]
+        , inputLevel player
         ]
 
-editForm : Post -> Html Msg
-editForm post =
-    Html.Form []
-        [ div []
-            [ text "Title"
-            , br [] []
-            , input
-                [ type_ "text"
-                , value post.title
-                ]
-                []
+inputLevel : Player -> Html.Html Msg
+inputLevel player =
+    div 
+        [ class "flex items-end py-2"]
+        [ label [ class "mr-3"] [ text "Level"]
+        , div [ class "" ]
+            [ span [ class "bold text-2x" ] [text (String.fromInt player.level)]
+            , btnLevelDecrease player
+            , btnLevelIncrease player
             ]
-        , br [] []
-        , div []
-            [ text "Author Name"
-            , br [] []
-            , input
-                [ type_ "text"
-                , value post.author.name
-                ]
-                []
-            ]
-        , br [] []
-        , div []
-            [ text "Author URL"
-            , br [] []
-            , input
-                [ type_ "text"
-                , value post.author.url
-                ]
-                []
-            ]
-        , br [] []
-        , div []
-            [ button []
-                [ text "Submit" ]
-            ]
-
+            
         ]
+
+btnLevelDecrease : Player -> Html.Html Msg
+btnLevelDecrease player =
+    let
+        message =
+            ChangeLevel player -1    
+    in
+    button [ class "btn ml-1 h1", onClick message ]
+        [ i [class "fa fa-minus-circle" ] [] ]
+
+btnLevelIncrease : Player -> Html.Html Msg
+btnLevelIncrease player =
+    let
+        message =
+            ChangeLevel player 1
+    in
+        button [ class "btn ml-1 h1", onClick message ]
+            [ i [ class "fa fa-plus-circle" ] [] ]
+
+

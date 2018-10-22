@@ -1,103 +1,46 @@
 module Pages.List exposing (view)
 
-import Types exposing (..)
+
 import Html exposing (..)
-import Html.Attributes exposing (href)
-import Html.Events exposing (onClick)
-import Http
-import RemoteData
+import Html.Attributes exposing (class, href)
+import Routes
+import Shared exposing (..)
 
-
-view : Model -> Html Msg
-view model =
-    div []
-        [ button [ onClick FetchPosts ]
-            [ text "Refresh posts" ]
-        , viewPostsOrError model
-        ]
-
-
-viewPostsOrError : Model -> Html Msg
-viewPostsOrError model =
-    case model.posts of
-        RemoteData.NotAsked ->
-            text ""
-
-        RemoteData.Loading ->
-            h3 [] [ text "Loading..." ]
-
-        RemoteData.Success posts ->
-            viewPosts posts
-
-        RemoteData.Failure httpError ->
-            viewError (createErrorMessage httpError)
-
-
-viewError : String -> Html Msg
-viewError errorMessage =
-    let
-        errorHeading =
-            "Couldn't fetch data at this time."
-    in
-        div []
-            [ h3 [] [ text errorHeading ]
-            , text ("Error: " ++ errorMessage)
+view : List Player -> Html Msg
+view players =
+    table []
+        [ thead []
+            [ tr []
+                [ th [ class "p-2" ] [ text "Id"] 
+                , th [ class "p-2" ] [ text "Id"] 
+                , th [ class "p-2" ] [ text "Id"] 
+                , th [ class "p-2" ] [ text "Id"] 
+                ]
             ]
-
-
-viewPosts : List Post -> Html Msg
-viewPosts posts =
-    div []
-        [ h3 [] [ text "Posts" ]
-        , table []
-            ([ viewTableHeader ] ++ List.map viewPost posts)
+        , tbody [] (List.map playerRow players)
         ]
 
-
-viewTableHeader : Html Msg
-viewTableHeader =
+playerRow : Player -> Html Msg
+playerRow player =
     tr []
-        [ th []
-            [ text "ID" ]
-        , th []
-            [ text "Title" ]
-        , th []
-            [ text "Author" ]
+        [ td [ class "p-2" ] [ text player.id ]
+        , td [ class "p-2" ] [ text player.name ]
+        , td [ class "p-2" ] [ text (String.fromInt player.level) ]
+        , td [ class "p-2" ]
+            [ editBtn player ]
         ]
 
+    
 
-viewPost : Post -> Html Msg
-viewPost post =
+editBtn : Player -> Html.Html Msg
+editBtn player =
     let
-        postPath =
-            "/posts/" ++ (String.fromInt post.id)
+        path =
+            Routes.playerPath player.id    
     in
-    tr []
-        [ td []
-            [ text (String.fromInt post.id) ]
-        , td []
-            [ text post.title ]
-        , td []
-            [ a [ href post.author.url ] [ text post.author.name ] ]
-        , td []
-            [ a [href postPath ] [ text "Edit"] ]
+    a 
+        [ class "btn regular"
+        , href path
         ]
-
-
-createErrorMessage : Http.Error -> String
-createErrorMessage httpError =
-    case httpError of
-        Http.BadUrl message ->
-            message
-
-        Http.Timeout ->
-            "Server is taking too long to respond. Please try again later."
-
-        Http.NetworkError ->
-            "It appears you don't have an Internet connection right now."
-
-        Http.BadStatus response ->
-            response.status.message
-
-        Http.BadPayload message response ->
-            message
+        [ i [ class "fa fa-edit mr-1" ] [],  text "Edit" ]
+    
