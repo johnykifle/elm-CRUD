@@ -6,7 +6,9 @@ import Html exposing (Html, a, button, div, form, input, li, section, span, text
 import Html.Attributes exposing (attribute, class, href, id, placeholder, type_)
 import Pages.Edit
 import Pages.List
+import Pages.Posts
 import Player exposing (fetchPlayers)
+import Posts exposing (fetchPosts)
 import Routes
 import Shared exposing (..)
 import Url exposing (Url)
@@ -22,7 +24,7 @@ init flags url key =
         currentRoute =
             Routes.parseUrl url
     in
-    ( initialModel currentRoute key, fetchPlayers )
+    ( initialModel currentRoute key, Cmd.batch [ fetchPlayers, fetchPosts ] )
 
 
 subscriptions : Model -> Sub Msg
@@ -32,7 +34,13 @@ subscriptions model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "the msg " msg of
+        OnFetchPosts (Ok posts) ->
+            ( { model | posts = Loaded posts }, Cmd.none )
+
+        OnFetchPosts (Err err) ->
+            ( { model | posts = Failure }, Cmd.none )
+
         OnFetchPlayers (Ok players) ->
             ( { model | players = Loaded players }, Cmd.none )
 
@@ -151,6 +159,9 @@ pageWithData model players =
             div []
                 [ horizontalNav model ]
 
+        PostsRoute ->
+            postsPageWithData model
+
         PlayersRoute ->
             Pages.List.view players
 
@@ -161,6 +172,22 @@ pageWithData model players =
             notFoundView
 
 
+postsPageWithData : Model -> Html Msg
+postsPageWithData model =
+    case model.posts of
+        NotAsked ->
+            text "Not found"
+
+        Loading ->
+            text " Loading posts "
+
+        Loaded posts ->
+            Pages.Posts.view posts
+
+        Failure ->
+            text "Error"
+
+
 horizontalNav : Model -> Html Msg
 horizontalNav model =
     div
@@ -168,6 +195,8 @@ horizontalNav model =
         [ a [ href Routes.homePath, class "text-white" ] [ text "Home" ]
         , text "  -  "
         , a [ href Routes.playersPath, class "text-white" ] [ text "Players" ]
+        , text " - "
+        , a [ href Routes.postsPath, class "text-white" ] [ text "Posts" ]
         ]
 
 
@@ -178,6 +207,9 @@ nav model =
             case model.route of
                 HomeRoute ->
                     [ homeToNav ]
+
+                PostsRoute ->
+                    [ postsLink ]
 
                 PlayersRoute ->
                     [ text "Players" ]
@@ -193,6 +225,9 @@ nav model =
 
         homeToNav =
             a [ href Routes.homePath, class "text-white" ] [ text "Home" ]
+
+        postsLink =
+            a [ href Routes.postsPath, class "text-white" ] [ text "Posts" ]
     in
     div
         [ class "mb-2 text-white bg-black p-4" ]

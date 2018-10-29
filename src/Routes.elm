@@ -1,4 +1,4 @@
-module Routes exposing (homePath, matchers, parseUrl, pathFor, playerPath, playersPath)
+module Routes exposing (homePath, matchers, parseUrl, pathFor, playerPath, playersPath, postsPath)
 
 import Shared exposing (..)
 import Url exposing (Url)
@@ -11,6 +11,7 @@ matchers =
         [ map HomeRoute top
         , map PlayerRoute (s "players" </> string)
         , map PlayersRoute (s "players")
+        , map PostsRoute (s "posts")
         ]
 
 
@@ -29,6 +30,9 @@ pathFor route =
     case route of
         HomeRoute ->
             "/"
+
+        PostsRoute ->
+            "/posts"
 
         PlayersRoute ->
             "/players"
@@ -50,3 +54,7 @@ playersPath =
 
 playerPath id =
     pathFor (PlayerRoute id)
+
+
+postsPath =
+    pathFor PostsRoute

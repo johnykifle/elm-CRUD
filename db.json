@@ -30,5 +30,33 @@
       "name": "Jaime",
       "level": 1
     }
-  ]
+  ],
+  "posts": [
+    {
+      "id": 1,
+      "title": "json-server",
+      "author": {
+          "name": "typicode",
+          "url": "https://github.com/typicode"
+      }
+    },
+    {
+      "id": 2,
+      "title": "http-server",
+      "author": {
+          "name": "indexzero",
+          "url": "https://github.com/indexzero"
+      }
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "some comment",
+      "postId": 1
+    }
+  ],
+  "profile": {
+    "name": "typicode"
+  }
 }
