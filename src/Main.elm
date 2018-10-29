@@ -2,58 +2,62 @@ module Main exposing (init, main, subscriptions)
 
 import Browser
 import Browser.Navigation as Nav exposing (Key)
-import Html exposing (Html, a, div, text, section)
-import Html.Attributes exposing (class, href)
-import Pages.Edit 
+import Html exposing (Html, a, button, div, form, input, li, section, span, text, ul)
+import Html.Attributes exposing (attribute, class, href, id, placeholder, type_)
+import Pages.Edit
 import Pages.List
 import Player exposing (fetchPlayers)
 import Routes
 import Shared exposing (..)
 import Url exposing (Url)
 
-type alias Flags = 
+
+type alias Flags =
     {}
 
-init : Flags -> Url -> Key -> (Model, Cmd Msg)
+
+init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         currentRoute =
             Routes.parseUrl url
     in
-        (initialModel currentRoute key, fetchPlayers)
+    ( initialModel currentRoute key, fetchPlayers )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
 
-update : Msg -> Model -> (Model, Cmd Msg)
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of 
+    case msg of
         OnFetchPlayers (Ok players) ->
             ( { model | players = Loaded players }, Cmd.none )
-        
+
         OnFetchPlayers (Err err) ->
-            ( { model | players = Failure }, Cmd.none)
-        
+            ( { model | players = Failure }, Cmd.none )
+
         OnUrlRequest urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( model 
-                    , Nav.pushUrl model.key (Url.toString url )
+                    ( model
+                    , Nav.pushUrl model.key (Url.toString url)
                     )
-                
+
                 Browser.External url ->
-                    ( model 
+                    ( model
                     , Nav.load url
                     )
-        
+
         OnUrlChange url ->
             let
                 newRoute =
                     Routes.parseUrl url
             in
-            ({ model | route = newRoute }, Cmd.none )
-        
+            ( { model | route = newRoute }, Cmd.none )
+
         ChangeLevel player howMuch ->
             let
                 updatedPlayer =
@@ -61,11 +65,12 @@ update msg model =
             in
             ( model, Player.savePlayerCmd updatedPlayer )
 
-        OnPlayerSave (Ok player ) ->
+        OnPlayerSave (Ok player) ->
             ( updatePlayerInModel player model, Cmd.none )
-        
+
         OnPlayerSave (Err error) ->
             ( model, Cmd.none )
+
 
 updatePlayerInModel : Player -> Model -> Model
 updatePlayerInModel player model =
@@ -75,20 +80,23 @@ updatePlayerInModel player model =
     in
     { model | players = updatedPlayers }
 
+
 updatePlayerInList : Player -> List Player -> List Player
 updatePlayerInList player players =
     let
         pick currentPlayer =
             if currentPlayer.id == player.id then
                 player
+
             else
                 currentPlayer
-
     in
     List.map pick players
 
 
+
 -- MAIN
+
 
 main : Program Flags Model Msg
 main =
@@ -101,13 +109,17 @@ main =
         , onUrlChange = OnUrlChange
         }
 
+
+
 -- VIEWS
+
 
 view : Model -> Browser.Document Msg
 view model =
     { title = "App"
     , body = [ page model ]
     }
+
 
 page : Model -> Html Msg
 page model =
@@ -124,44 +136,68 @@ page model =
                     pageWithData model players
 
                 Failure ->
-                    text "Error"    
+                    text "Error"
     in
     section []
-        [ nav model 
+        [ nav model
         , div [ class "p-4" ] [ content ]
         ]
-    
+
+
 pageWithData : Model -> List Player -> Html Msg
 pageWithData model players =
     case model.route of
+        HomeRoute ->
+            div []
+                [ horizontalNav model ]
+
         PlayersRoute ->
             Pages.List.view players
-        
+
         PlayerRoute id ->
             Pages.Edit.view players id
 
         NotFoundRoute ->
             notFoundView
 
+
+horizontalNav : Model -> Html Msg
+horizontalNav model =
+    div
+        [ class "mb-2 text-white bg-black p-4" ]
+        [ a [ href Routes.homePath, class "text-white" ] [ text "Home" ]
+        , text "  -  "
+        , a [ href Routes.playersPath, class "text-white" ] [ text "Players" ]
+        ]
+
+
 nav : Model -> Html Msg
 nav model =
     let
         links =
             case model.route of
+                HomeRoute ->
+                    [ homeToNav ]
+
                 PlayersRoute ->
-                    [ text "Players"]
+                    [ text "Players" ]
 
                 PlayerRoute _ ->
                     [ linkToList ]
 
                 NotFoundRoute ->
                     [ linkToList ]
+
         linkToList =
             a [ href Routes.playersPath, class "text-white" ] [ text "List" ]
+
+        homeToNav =
+            a [ href Routes.homePath, class "text-white" ] [ text "Home" ]
     in
-    div 
+    div
         [ class "mb-2 text-white bg-black p-4" ]
-        links    
+        links
+
 
 notFoundView : Html msg
 notFoundView =

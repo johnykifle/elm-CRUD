@@ -5783,6 +5783,7 @@ var author$project$Player$fetchPlayers = A2(
 	elm$http$Http$send,
 	author$project$Shared$OnFetchPlayers,
 	A2(elm$http$Http$get, author$project$Player$fetchPlayersUrl, author$project$Player$playersDecoder));
+var author$project$Shared$HomeRoute = {$: 'HomeRoute'};
 var author$project$Shared$PlayerRoute = function (a) {
 	return {$: 'PlayerRoute', a: a};
 };
@@ -5934,7 +5935,7 @@ var elm$url$Url$Parser$top = elm$url$Url$Parser$Parser(
 var author$project$Routes$matchers = elm$url$Url$Parser$oneOf(
 	_List_fromArray(
 		[
-			A2(elm$url$Url$Parser$map, author$project$Shared$PlayersRoute, elm$url$Url$Parser$top),
+			A2(elm$url$Url$Parser$map, author$project$Shared$HomeRoute, elm$url$Url$Parser$top),
 			A2(
 			elm$url$Url$Parser$map,
 			author$project$Shared$PlayerRoute,
@@ -6473,6 +6474,8 @@ var author$project$Main$update = F2(
 	});
 var author$project$Routes$pathFor = function (route) {
 	switch (route.$) {
+		case 'HomeRoute':
+			return '/';
 		case 'PlayersRoute':
 			return '/players';
 		case 'PlayerRoute':
@@ -6482,6 +6485,7 @@ var author$project$Routes$pathFor = function (route) {
 			return '/';
 	}
 };
+var author$project$Routes$homePath = author$project$Routes$pathFor(author$project$Shared$HomeRoute);
 var author$project$Routes$playersPath = author$project$Routes$pathFor(author$project$Shared$PlayersRoute);
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$div = _VirtualDom_node('div');
@@ -6513,9 +6517,23 @@ var author$project$Main$nav = function (model) {
 			[
 				elm$html$Html$text('List')
 			]));
+	var homeToNav = A2(
+		elm$html$Html$a,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$href(author$project$Routes$homePath),
+				elm$html$Html$Attributes$class('text-white')
+			]),
+		_List_fromArray(
+			[
+				elm$html$Html$text('Home')
+			]));
 	var links = function () {
 		var _n0 = model.route;
 		switch (_n0.$) {
+			case 'HomeRoute':
+				return _List_fromArray(
+					[homeToNav]);
 			case 'PlayersRoute':
 				return _List_fromArray(
 					[
@@ -6536,6 +6554,40 @@ var author$project$Main$nav = function (model) {
 				elm$html$Html$Attributes$class('mb-2 text-white bg-black p-4')
 			]),
 		links);
+};
+var author$project$Main$horizontalNav = function (model) {
+	return A2(
+		elm$html$Html$div,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('mb-2 text-white bg-black p-4')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$a,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$href(author$project$Routes$homePath),
+						elm$html$Html$Attributes$class('text-white')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('Home')
+					])),
+				elm$html$Html$text('  -  '),
+				A2(
+				elm$html$Html$a,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$href(author$project$Routes$playersPath),
+						elm$html$Html$Attributes$class('text-white')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('Players')
+					]))
+			]));
 };
 var author$project$Main$notFoundView = A2(
 	elm$html$Html$div,
@@ -6832,7 +6884,7 @@ var author$project$Pages$List$view = function (players) {
 									]),
 								_List_fromArray(
 									[
-										elm$html$Html$text('Id')
+										elm$html$Html$text('Name')
 									])),
 								A2(
 								elm$html$Html$th,
@@ -6842,7 +6894,7 @@ var author$project$Pages$List$view = function (players) {
 									]),
 								_List_fromArray(
 									[
-										elm$html$Html$text('Id')
+										elm$html$Html$text('Level')
 									])),
 								A2(
 								elm$html$Html$th,
@@ -6852,7 +6904,7 @@ var author$project$Pages$List$view = function (players) {
 									]),
 								_List_fromArray(
 									[
-										elm$html$Html$text('Id')
+										elm$html$Html$text('Action')
 									]))
 							]))
 					])),
@@ -6866,6 +6918,14 @@ var author$project$Main$pageWithData = F2(
 	function (model, players) {
 		var _n0 = model.route;
 		switch (_n0.$) {
+			case 'HomeRoute':
+				return A2(
+					elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							author$project$Main$horizontalNav(model)
+						]));
 			case 'PlayersRoute':
 				return author$project$Pages$List$view(players);
 			case 'PlayerRoute':

@@ -30,6 +30,7 @@ type alias Player =
 type Route
     = PlayersRoute
     | PlayerRoute PlayerId
+    | HomeRoute
     | NotFoundRoute
 
 type Msg
