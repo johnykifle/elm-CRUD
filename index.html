@@ -5812,21 +5812,42 @@ var author$project$Posts$postDecoder = A3(
 		A3(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 			'id',
-			elm$json$Json$Decode$int,
+			elm$json$Json$Decode$string,
 			elm$json$Json$Decode$succeed(author$project$Shared$Post))));
 var author$project$Posts$postsDecoder = elm$json$Json$Decode$list(author$project$Posts$postDecoder);
 var author$project$Shared$OnFetchPosts = function (a) {
 	return {$: 'OnFetchPosts', a: a};
 };
+var elm$core$Platform$Cmd$map = _Platform_map;
+var krisajenkins$remotedata$RemoteData$Failure = function (a) {
+	return {$: 'Failure', a: a};
+};
+var krisajenkins$remotedata$RemoteData$Success = function (a) {
+	return {$: 'Success', a: a};
+};
+var krisajenkins$remotedata$RemoteData$fromResult = function (result) {
+	if (result.$ === 'Err') {
+		var e = result.a;
+		return krisajenkins$remotedata$RemoteData$Failure(e);
+	} else {
+		var x = result.a;
+		return krisajenkins$remotedata$RemoteData$Success(x);
+	}
+};
+var krisajenkins$remotedata$RemoteData$sendRequest = elm$http$Http$send(krisajenkins$remotedata$RemoteData$fromResult);
 var author$project$Posts$fetchPosts = A2(
-	elm$http$Http$send,
+	elm$core$Platform$Cmd$map,
 	author$project$Shared$OnFetchPosts,
-	A2(elm$http$Http$get, author$project$Posts$fetchPostsUrl, author$project$Posts$postsDecoder));
+	krisajenkins$remotedata$RemoteData$sendRequest(
+		A2(elm$http$Http$get, author$project$Posts$fetchPostsUrl, author$project$Posts$postsDecoder)));
 var author$project$Shared$HomeRoute = {$: 'HomeRoute'};
 var author$project$Shared$PlayerRoute = function (a) {
 	return {$: 'PlayerRoute', a: a};
 };
 var author$project$Shared$PlayersRoute = {$: 'PlayersRoute'};
+var author$project$Shared$PostRoute = function (a) {
+	return {$: 'PostRoute', a: a};
+};
 var author$project$Shared$PostsRoute = {$: 'PostsRoute'};
 var elm$url$Url$Parser$Parser = function (a) {
 	return {$: 'Parser', a: a};
@@ -5989,6 +6010,13 @@ var author$project$Routes$matchers = elm$url$Url$Parser$oneOf(
 			elm$url$Url$Parser$s('players')),
 			A2(
 			elm$url$Url$Parser$map,
+			author$project$Shared$PostRoute,
+			A2(
+				elm$url$Url$Parser$slash,
+				elm$url$Url$Parser$s('posts'),
+				elm$url$Url$Parser$string)),
+			A2(
+			elm$url$Url$Parser$map,
 			author$project$Shared$PostsRoute,
 			elm$url$Url$Parser$s('posts'))
 		]));
@@ -6118,9 +6146,10 @@ var author$project$Routes$parseUrl = function (url) {
 	}
 };
 var author$project$Shared$Loading = {$: 'Loading'};
+var krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var author$project$Shared$initialModel = F2(
 	function (route, key) {
-		return {key: key, players: author$project$Shared$Loading, posts: author$project$Shared$Loading, route: route};
+		return {errorPostMessage: elm$core$Maybe$Nothing, key: key, players: author$project$Shared$Loading, posts: krisajenkins$remotedata$RemoteData$NotAsked, route: route};
 	});
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var author$project$Main$init = F3(
@@ -6136,6 +6165,17 @@ var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
 var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$none;
+};
+var author$project$Main$convertToWebData = function (posts) {
+	return krisajenkins$remotedata$RemoteData$Success(posts);
+};
+var author$project$Main$getPosts = function (remoteDataPosts) {
+	if (remoteDataPosts.$ === 'Success') {
+		var posts = remoteDataPosts.a;
+		return posts;
+	} else {
+		return _List_Nil;
+	}
 };
 var author$project$Main$updatePlayerInList = F2(
 	function (player, players) {
@@ -6238,6 +6278,49 @@ var author$project$Player$savePlayerCmd = function (player) {
 		elm$http$Http$send,
 		author$project$Shared$OnPlayerSave,
 		author$project$Player$savePlayerRequest(player));
+};
+var author$project$Posts$postEncoder = function (post) {
+	var attributes = _List_fromArray(
+		[
+			_Utils_Tuple2(
+			'id',
+			elm$json$Json$Encode$string(post.id)),
+			_Utils_Tuple2(
+			'title',
+			elm$json$Json$Encode$string(post.title))
+		]);
+	return elm$json$Json$Encode$object(attributes);
+};
+var author$project$Posts$savePostUrl = function (postId) {
+	return 'http://localhost:4000/posts/' + postId;
+};
+var author$project$Posts$savePostRequest = function (post) {
+	return elm$http$Http$request(
+		{
+			body: elm$http$Http$jsonBody(
+				author$project$Posts$postEncoder(post)),
+			expect: elm$http$Http$expectJson(author$project$Posts$postDecoder),
+			headers: _List_Nil,
+			method: 'PATCH',
+			timeout: elm$core$Maybe$Nothing,
+			url: author$project$Posts$savePostUrl(post.id),
+			withCredentials: false
+		});
+};
+var author$project$Shared$OnPostSave = function (a) {
+	return {$: 'OnPostSave', a: a};
+};
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var author$project$Posts$savePostCmd = function (post) {
+	if (post.$ === 'Just') {
+		var data = post.a;
+		return A2(
+			elm$http$Http$send,
+			author$project$Shared$OnPostSave,
+			author$project$Posts$savePostRequest(data));
+	} else {
+		return elm$core$Platform$Cmd$none;
+	}
 };
 var elm$browser$Browser$External = function (a) {
 	return {$: 'External', a: a};
@@ -6408,7 +6491,26 @@ var elm$url$Url$fromString = function (str) {
 var elm$browser$Browser$Navigation$load = _Browser_load;
 var elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
 var elm$core$Debug$log = _Debug_log;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(x);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
 var elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6453,31 +6555,26 @@ var elm$url$Url$toString = function (url) {
 					_Utils_ap(http, url.host)),
 				url.path)));
 };
+var krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var author$project$Main$update = F2(
 	function (msg, model) {
-		var _n0 = A2(elm$core$Debug$log, 'the msg ', msg);
-		switch (_n0.$) {
+		switch (msg.$) {
+			case 'SendHttpRequest':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{posts: krisajenkins$remotedata$RemoteData$Loading}),
+					author$project$Posts$fetchPosts);
 			case 'OnFetchPosts':
-				if (_n0.a.$ === 'Ok') {
-					var posts = _n0.a.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								posts: author$project$Shared$Loaded(posts)
-							}),
-						elm$core$Platform$Cmd$none);
-				} else {
-					var err = _n0.a.a;
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{posts: author$project$Shared$Failure}),
-						elm$core$Platform$Cmd$none);
-				}
+				var response = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{posts: response}),
+					elm$core$Platform$Cmd$none);
 			case 'OnFetchPlayers':
-				if (_n0.a.$ === 'Ok') {
-					var players = _n0.a.a;
+				if (msg.a.$ === 'Ok') {
+					var players = msg.a.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6486,7 +6583,7 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none);
 				} else {
-					var err = _n0.a.a;
+					var err = msg.a.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6494,7 +6591,7 @@ var author$project$Main$update = F2(
 						elm$core$Platform$Cmd$none);
 				}
 			case 'OnUrlRequest':
-				var urlRequest = _n0.a;
+				var urlRequest = msg.a;
 				if (urlRequest.$ === 'Internal') {
 					var url = urlRequest.a;
 					return _Utils_Tuple2(
@@ -6510,7 +6607,7 @@ var author$project$Main$update = F2(
 						elm$browser$Browser$Navigation$load(url));
 				}
 			case 'OnUrlChange':
-				var url = _n0.a;
+				var url = msg.a;
 				var newRoute = author$project$Routes$parseUrl(url);
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -6518,24 +6615,58 @@ var author$project$Main$update = F2(
 						{route: newRoute}),
 					elm$core$Platform$Cmd$none);
 			case 'ChangeLevel':
-				var player = _n0.a;
-				var howMuch = _n0.b;
+				var player = msg.a;
+				var howMuch = msg.b;
 				var updatedPlayer = _Utils_update(
 					player,
 					{level: player.level + howMuch});
 				return _Utils_Tuple2(
 					model,
 					author$project$Player$savePlayerCmd(updatedPlayer));
-			default:
-				if (_n0.a.$ === 'Ok') {
-					var player = _n0.a.a;
+			case 'OnPostSave':
+				if (msg.a.$ === 'Ok') {
+					var post = msg.a.a;
+					var _n2 = A2(elm$core$Debug$log, 'posting save ', post);
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				} else {
+					var error = msg.a.a;
+					var _n3 = A2(elm$core$Debug$log, 'issue', error);
+					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
+			case 'OnPlayerSave':
+				if (msg.a.$ === 'Ok') {
+					var player = msg.a.a;
 					return _Utils_Tuple2(
 						A2(author$project$Main$updatePlayerInModel, player, model),
 						elm$core$Platform$Cmd$none);
 				} else {
-					var error = _n0.a.a;
+					var error = msg.a.a;
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
+			default:
+				var postId = msg.a;
+				var newTitle = msg.b;
+				var posts = author$project$Main$getPosts(model.posts);
+				var pick = function (post) {
+					return _Utils_eq(post.id, postId) ? _Utils_update(
+						post,
+						{title: newTitle}) : post;
+				};
+				var updatedPosts = A2(elm$core$List$map, pick, posts);
+				var editPost = elm$core$List$head(
+					A2(
+						elm$core$List$filter,
+						function (x) {
+							return _Utils_eq(x.id, postId);
+						},
+						posts));
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							posts: author$project$Main$convertToWebData(updatedPosts)
+						}),
+					author$project$Posts$savePostCmd(editPost));
 		}
 	});
 var author$project$Routes$pathFor = function (route) {
@@ -6544,6 +6675,9 @@ var author$project$Routes$pathFor = function (route) {
 			return '/';
 		case 'PostsRoute':
 			return '/posts';
+		case 'PostRoute':
+			var id = route.a;
+			return '/posts/' + id;
 		case 'PlayersRoute':
 			return '/players';
 		case 'PlayerRoute':
@@ -6617,6 +6751,11 @@ var author$project$Main$nav = function (model) {
 			case 'PostsRoute':
 				return _List_fromArray(
 					[postsLink]);
+			case 'PostRoute':
+				return _List_fromArray(
+					[
+						elm$html$Html$text('post detail ')
+					]);
 			case 'PlayersRoute':
 				return _List_fromArray(
 					[
@@ -6691,6 +6830,126 @@ var author$project$Main$notFoundView = A2(
 		[
 			elm$html$Html$text('Not found')
 		]));
+var author$project$Pages$EditPost$findPostById = F2(
+	function (id, posts) {
+		return A2(
+			elm$core$List$filter,
+			function (x) {
+				return _Utils_eq(x.id, id);
+			},
+			posts);
+	});
+var author$project$Shared$UpdateTitle = F2(
+	function (a, b) {
+		return {$: 'UpdateTitle', a: a, b: b};
+	});
+var elm$html$Html$form = _VirtualDom_node('form');
+var elm$html$Html$input = _VirtualDom_node('input');
+var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
+var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
+var elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
+var elm$html$Html$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			elm$html$Html$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
+};
+var author$project$Pages$EditPost$view = F2(
+	function (id, posts) {
+		var filteredPosts = A2(author$project$Pages$EditPost$findPostById, id, posts);
+		var post = elm$core$List$head(filteredPosts);
+		if (post.$ === 'Just') {
+			var curretPost = post.a;
+			return A2(
+				elm$html$Html$form,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$div,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text(curretPost.id)
+									])),
+								A2(
+								elm$html$Html$input,
+								_List_fromArray(
+									[
+										elm$html$Html$Attributes$type_('text'),
+										elm$html$Html$Attributes$value(curretPost.title),
+										elm$html$Html$Events$onInput(
+										author$project$Shared$UpdateTitle(curretPost.id))
+									]),
+								_List_Nil)
+							]))
+					]));
+		} else {
+			return A2(
+				elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('post not found')
+					]));
+		}
+	});
+var author$project$Routes$postPath = function (id) {
+	return author$project$Routes$pathFor(
+		author$project$Shared$PostRoute(id));
+};
+var elm$html$Html$i = _VirtualDom_node('i');
+var author$project$Pages$Posts$editBtn = function (post) {
+	var path = author$project$Routes$postPath(post.id);
+	return A2(
+		elm$html$Html$a,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('btn regular'),
+				elm$html$Html$Attributes$href(path)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$i,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('fa fa-edit ')
+					]),
+				_List_Nil),
+				elm$html$Html$text('Edit')
+			]));
+};
 var elm$html$Html$td = _VirtualDom_node('td');
 var elm$html$Html$tr = _VirtualDom_node('tr');
 var author$project$Pages$Posts$postRow = function (post) {
@@ -6704,8 +6963,7 @@ var author$project$Pages$Posts$postRow = function (post) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text(
-						elm$core$String$fromInt(post.id))
+						elm$html$Html$text(post.id)
 					])),
 				A2(
 				elm$html$Html$td,
@@ -6720,6 +6978,13 @@ var author$project$Pages$Posts$postRow = function (post) {
 				_List_fromArray(
 					[
 						elm$html$Html$text(post.author.name)
+					])),
+				A2(
+				elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						author$project$Pages$Posts$editBtn(post)
 					]))
 			]));
 };
@@ -6778,6 +7043,13 @@ var author$project$Pages$Posts$view = function (posts) {
 										_List_fromArray(
 											[
 												elm$html$Html$text('Author-Name')
+											])),
+										A2(
+										elm$html$Html$th,
+										_List_Nil,
+										_List_fromArray(
+											[
+												elm$html$Html$text('Action')
 											]))
 									]))
 							])),
@@ -6788,40 +7060,26 @@ var author$project$Pages$Posts$view = function (posts) {
 					]))
 			]));
 };
-var author$project$Main$postsPageWithData = function (model) {
-	var _n0 = model.posts;
-	switch (_n0.$) {
-		case 'NotAsked':
-			return elm$html$Html$text('Not found');
-		case 'Loading':
-			return elm$html$Html$text(' Loading posts ');
-		case 'Loaded':
-			var posts = _n0.a;
-			return author$project$Pages$Posts$view(posts);
-		default:
-			return elm$html$Html$text('Error');
-	}
-};
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
+var author$project$Main$postsPageWithData = F2(
+	function (id, model) {
+		var _n0 = model.posts;
+		switch (_n0.$) {
+			case 'NotAsked':
+				return elm$html$Html$text('Not found');
+			case 'Loading':
+				return elm$html$Html$text(' Loading posts ');
+			case 'Success':
+				var posts = _n0.a;
+				if (id.$ === 'Just') {
+					var postId = id.a;
+					return A2(author$project$Pages$EditPost$view, postId, posts);
+				} else {
+					return author$project$Pages$Posts$view(posts);
+				}
+			default:
+				return elm$html$Html$text('Error');
+		}
 	});
-var elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(x);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
 var author$project$Pages$Edit$findPlayer = F2(
 	function (players, playerId) {
 		return elm$core$List$head(
@@ -6840,11 +7098,9 @@ var elm$core$Basics$negate = function (n) {
 	return -n;
 };
 var elm$html$Html$button = _VirtualDom_node('button');
-var elm$html$Html$i = _VirtualDom_node('i');
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var elm$html$Html$Events$on = F2(
 	function (event, decoder) {
 		return A2(
@@ -7127,7 +7383,13 @@ var author$project$Main$pageWithData = F2(
 							author$project$Main$horizontalNav(model)
 						]));
 			case 'PostsRoute':
-				return author$project$Main$postsPageWithData(model);
+				return A2(author$project$Main$postsPageWithData, elm$core$Maybe$Nothing, model);
+			case 'PostRoute':
+				var id = _n0.a;
+				return A2(
+					author$project$Main$postsPageWithData,
+					elm$core$Maybe$Just(id),
+					model);
 			case 'PlayersRoute':
 				return author$project$Pages$List$view(players);
 			case 'PlayerRoute':

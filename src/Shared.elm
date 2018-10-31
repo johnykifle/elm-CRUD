@@ -1,14 +1,16 @@
-module Shared exposing (Model, Msg(..), Player, PlayerId, RemoteData(..), Route(..), initialModel, mapRemoteData, Post, Author)
+module Shared exposing (Author, Model, Msg(..), Player, PlayerId, Post, PostId, RemoteData(..), Route(..), initialModel, mapRemoteData)
 
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Http
+import RemoteData exposing (WebData)
 import Url exposing (Url)
 
 
 type alias Model =
     { players : RemoteData (List Player)
-    , posts : RemoteData (List Post)
+    , posts : WebData (List Post)
+    , errorPostMessage : Maybe String
     , key : Key
     , route : Route
     }
@@ -17,7 +19,8 @@ type alias Model =
 initialModel : Route -> Key -> Model
 initialModel route key =
     { players = Loading
-    , posts = Loading
+    , posts = RemoteData.NotAsked
+    , errorPostMessage = Nothing
     , key = key
     , route = route
     }
@@ -28,7 +31,7 @@ type alias PlayerId =
 
 
 type alias PostId =
-    Int
+    String
 
 
 type alias Player =
@@ -56,12 +59,16 @@ type Route
     | PlayerRoute PlayerId
     | HomeRoute
     | PostsRoute
+    | PostRoute PostId
     | NotFoundRoute
 
 
 type Msg
     = OnFetchPlayers (Result Http.Error (List Player))
-    | OnFetchPosts (Result Http.Error (List Post))
+    | OnFetchPosts (WebData (List Post))
+    | SendHttpRequest
+    | UpdateTitle PostId String
+    | OnPostSave (Result Http.Error Post)
     | OnUrlChange Url
     | OnUrlRequest UrlRequest
     | ChangeLevel Player Int

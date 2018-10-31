@@ -33,19 +33,19 @@
   ],
   "posts": [
     {
-      "id": 1,
-      "title": "json-server",
+      "id": "1",
+      "title": "json-serverss",
       "author": {
-          "name": "typicode",
-          "url": "https://github.com/typicode"
+        "name": "typicode",
+        "url": "https://github.com/typicode"
       }
     },
     {
-      "id": 2,
+      "id": "2",
       "title": "http-server",
       "author": {
-          "name": "indexzero",
-          "url": "https://github.com/indexzero"
+        "name": "indexzero",
+        "url": "https://github.com/indexzero"
       }
     }
   ],

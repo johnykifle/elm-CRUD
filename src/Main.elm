@@ -2,13 +2,16 @@ module Main exposing (init, main, subscriptions)
 
 import Browser
 import Browser.Navigation as Nav exposing (Key)
+import Error exposing (createErrorMessage)
 import Html exposing (Html, a, button, div, form, input, li, section, span, text, ul)
 import Html.Attributes exposing (attribute, class, href, id, placeholder, type_)
 import Pages.Edit
+import Pages.EditPost
 import Pages.List
 import Pages.Posts
 import Player exposing (fetchPlayers)
-import Posts exposing (fetchPosts)
+import Posts exposing (fetchPosts, savePostCmd)
+import RemoteData exposing (WebData)
 import Routes
 import Shared exposing (..)
 import Url exposing (Url)
@@ -34,12 +37,12 @@ subscriptions model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case Debug.log "the msg " msg of
-        OnFetchPosts (Ok posts) ->
-            ( { model | posts = Loaded posts }, Cmd.none )
+    case msg of
+        SendHttpRequest ->
+            ( { model | posts = RemoteData.Loading }, fetchPosts )
 
-        OnFetchPosts (Err err) ->
-            ( { model | posts = Failure }, Cmd.none )
+        OnFetchPosts response ->
+            ( { model | posts = response }, Cmd.none )
 
         OnFetchPlayers (Ok players) ->
             ( { model | players = Loaded players }, Cmd.none )
@@ -73,11 +76,63 @@ update msg model =
             in
             ( model, Player.savePlayerCmd updatedPlayer )
 
+        OnPostSave (Ok post) ->
+            let
+                _ =
+                    Debug.log "posting save " post
+            in
+            ( model, Cmd.none )
+
+        OnPostSave (Err error) ->
+            let
+                _ =
+                    Debug.log "issue" error
+            in
+            ( model, Cmd.none )
+
         OnPlayerSave (Ok player) ->
             ( updatePlayerInModel player model, Cmd.none )
 
         OnPlayerSave (Err error) ->
             ( model, Cmd.none )
+
+        UpdateTitle postId newTitle ->
+            let
+                pick post =
+                    if post.id == postId then
+                        { post | title = newTitle }
+
+                    else
+                        post
+
+                posts =
+                    getPosts model.posts
+
+                editPost =
+                    posts
+                        |> List.filter (\x -> x.id == postId)
+                        |> List.head
+                        
+
+                updatedPosts =
+                    List.map pick posts
+            in
+            ( { model | posts = convertToWebData updatedPosts }, savePostCmd editPost )
+
+
+getPosts : WebData (List Post) -> List Post
+getPosts remoteDataPosts =
+    case remoteDataPosts of
+        RemoteData.Success posts ->
+            posts
+
+        _ ->
+            []
+
+
+convertToWebData : List Post -> WebData (List Post)
+convertToWebData posts =
+    RemoteData.Success posts
 
 
 updatePlayerInModel : Player -> Model -> Model
@@ -160,7 +215,10 @@ pageWithData model players =
                 [ horizontalNav model ]
 
         PostsRoute ->
-            postsPageWithData model
+            postsPageWithData Nothing model
+
+        PostRoute id ->
+            postsPageWithData (Just id) model
 
         PlayersRoute ->
             Pages.List.view players
@@ -172,19 +230,24 @@ pageWithData model players =
             notFoundView
 
 
-postsPageWithData : Model -> Html Msg
-postsPageWithData model =
+postsPageWithData : Maybe PostId -> Model -> Html Msg
+postsPageWithData id model =
     case model.posts of
-        NotAsked ->
+        RemoteData.NotAsked ->
             text "Not found"
 
-        Loading ->
+        RemoteData.Loading ->
             text " Loading posts "
 
-        Loaded posts ->
-            Pages.Posts.view posts
+        RemoteData.Success posts ->
+            case id of
+                Just postId ->
+                    Pages.EditPost.view postId posts
 
-        Failure ->
+                Nothing ->
+                    Pages.Posts.view posts
+
+        RemoteData.Failure _ ->
             text "Error"
 
 
@@ -210,6 +273,9 @@ nav model =
 
                 PostsRoute ->
                     [ postsLink ]
+
+                PostRoute _ ->
+                    [ text "post detail " ]
 
                 PlayersRoute ->
                     [ text "Players" ]
