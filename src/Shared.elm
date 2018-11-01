@@ -60,6 +60,7 @@ type Route
     | HomeRoute
     | PostsRoute
     | PostRoute PostId
+    | ElmCssRoute
     | NotFoundRoute
 
 

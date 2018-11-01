@@ -9,6 +9,7 @@ import Pages.Edit
 import Pages.EditPost
 import Pages.List
 import Pages.Posts
+import Pages.ElmCss
 import Player exposing (fetchPlayers)
 import Posts exposing (fetchPosts, savePostCmd)
 import RemoteData exposing (WebData)
@@ -77,17 +78,9 @@ update msg model =
             ( model, Player.savePlayerCmd updatedPlayer )
 
         OnPostSave (Ok post) ->
-            let
-                _ =
-                    Debug.log "posting save " post
-            in
             ( model, Cmd.none )
 
         OnPostSave (Err error) ->
-            let
-                _ =
-                    Debug.log "issue" error
-            in
             ( model, Cmd.none )
 
         OnPlayerSave (Ok player) ->
@@ -98,6 +91,7 @@ update msg model =
 
         UpdateTitle postId newTitle ->
             let
+                _ = Debug.log "new title  " newTitle
                 pick post =
                     if post.id == postId then
                         { post | title = newTitle }
@@ -112,7 +106,6 @@ update msg model =
                     posts
                         |> List.filter (\x -> x.id == postId)
                         |> List.head
-                        
 
                 updatedPosts =
                     List.map pick posts
@@ -225,6 +218,9 @@ pageWithData model players =
 
         PlayerRoute id ->
             Pages.Edit.view players id
+        
+        ElmCssRoute ->
+            Pages.ElmCss.view
 
         NotFoundRoute ->
             notFoundView
@@ -260,6 +256,8 @@ horizontalNav model =
         , a [ href Routes.playersPath, class "text-white" ] [ text "Players" ]
         , text " - "
         , a [ href Routes.postsPath, class "text-white" ] [ text "Posts" ]
+        , text " - "
+        , a [ href Routes.elmCssPath ] [ text "Elm-Css"]
         ]
 
 
@@ -282,6 +280,9 @@ nav model =
 
                 PlayerRoute _ ->
                     [ linkToList ]
+                
+                ElmCssRoute ->
+                    [ linkToElmCss ]
 
                 NotFoundRoute ->
                     [ linkToList ]
@@ -294,6 +295,9 @@ nav model =
 
         postsLink =
             a [ href Routes.postsPath, class "text-white" ] [ text "Posts" ]
+        
+        linkToElmCss =
+            a [ href Routes.elmCssPath, class "text-white" ] [ text "Elm-css" ]
     in
     div
         [ class "mb-2 text-white bg-black p-4" ]

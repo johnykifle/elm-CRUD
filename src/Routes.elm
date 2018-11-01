@@ -1,4 +1,4 @@
-module Routes exposing (homePath, matchers, parseUrl, pathFor, playerPath, playersPath, postPath, postsPath)
+module Routes exposing (homePath, matchers, parseUrl, pathFor, playerPath, playersPath, postPath, postsPath, elmCssPath)
 
 import Shared exposing (..)
 import Url exposing (Url)
@@ -13,6 +13,7 @@ matchers =
         , map PlayersRoute (s "players")
         , map PostRoute (s "posts" </> string)
         , map PostsRoute (s "posts")
+        , map ElmCssRoute (s "elm-css")
         ]
 
 
@@ -44,6 +45,9 @@ pathFor route =
         PlayerRoute id ->
             "/players/" ++ id
 
+        ElmCssRoute ->
+            "/elm-css"
+
         NotFoundRoute ->
             "/"
 
@@ -66,3 +70,7 @@ postsPath =
 
 postPath id =
     pathFor (PostRoute id)
+
+
+elmCssPath =
+    pathFor ElmCssRoute

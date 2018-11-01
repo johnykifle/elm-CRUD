@@ -6,6 +6,7 @@ import Routes
 import Shared exposing (Msg(..), Post)
 
 
+
 view : List Post -> Html Msg
 view posts =
     div []

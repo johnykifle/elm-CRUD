@@ -5840,6 +5840,7 @@ var author$project$Posts$fetchPosts = A2(
 	author$project$Shared$OnFetchPosts,
 	krisajenkins$remotedata$RemoteData$sendRequest(
 		A2(elm$http$Http$get, author$project$Posts$fetchPostsUrl, author$project$Posts$postsDecoder)));
+var author$project$Shared$ElmCssRoute = {$: 'ElmCssRoute'};
 var author$project$Shared$HomeRoute = {$: 'HomeRoute'};
 var author$project$Shared$PlayerRoute = function (a) {
 	return {$: 'PlayerRoute', a: a};
@@ -6018,7 +6019,11 @@ var author$project$Routes$matchers = elm$url$Url$Parser$oneOf(
 			A2(
 			elm$url$Url$Parser$map,
 			author$project$Shared$PostsRoute,
-			elm$url$Url$Parser$s('posts'))
+			elm$url$Url$Parser$s('posts')),
+			A2(
+			elm$url$Url$Parser$map,
+			author$project$Shared$ElmCssRoute,
+			elm$url$Url$Parser$s('elm-css'))
 		]));
 var author$project$Shared$NotFoundRoute = {$: 'NotFoundRoute'};
 var elm$url$Url$Parser$getFirstMatch = function (states) {
@@ -6626,11 +6631,9 @@ var author$project$Main$update = F2(
 			case 'OnPostSave':
 				if (msg.a.$ === 'Ok') {
 					var post = msg.a.a;
-					var _n2 = A2(elm$core$Debug$log, 'posting save ', post);
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				} else {
 					var error = msg.a.a;
-					var _n3 = A2(elm$core$Debug$log, 'issue', error);
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
 			case 'OnPlayerSave':
@@ -6660,6 +6663,7 @@ var author$project$Main$update = F2(
 							return _Utils_eq(x.id, postId);
 						},
 						posts));
+				var _n2 = A2(elm$core$Debug$log, 'new title  ', newTitle);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -6683,10 +6687,13 @@ var author$project$Routes$pathFor = function (route) {
 		case 'PlayerRoute':
 			var id = route.a;
 			return '/players/' + id;
+		case 'ElmCssRoute':
+			return '/elm-css';
 		default:
 			return '/';
 	}
 };
+var author$project$Routes$elmCssPath = author$project$Routes$pathFor(author$project$Shared$ElmCssRoute);
 var author$project$Routes$homePath = author$project$Routes$pathFor(author$project$Shared$HomeRoute);
 var author$project$Routes$playersPath = author$project$Routes$pathFor(author$project$Shared$PlayersRoute);
 var author$project$Routes$postsPath = author$project$Routes$pathFor(author$project$Shared$PostsRoute);
@@ -6731,6 +6738,17 @@ var author$project$Main$nav = function (model) {
 			[
 				elm$html$Html$text('List')
 			]));
+	var linkToElmCss = A2(
+		elm$html$Html$a,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$href(author$project$Routes$elmCssPath),
+				elm$html$Html$Attributes$class('text-white')
+			]),
+		_List_fromArray(
+			[
+				elm$html$Html$text('Elm-css')
+			]));
 	var homeToNav = A2(
 		elm$html$Html$a,
 		_List_fromArray(
@@ -6764,6 +6782,9 @@ var author$project$Main$nav = function (model) {
 			case 'PlayerRoute':
 				return _List_fromArray(
 					[linkToList]);
+			case 'ElmCssRoute':
+				return _List_fromArray(
+					[linkToElmCss]);
 			default:
 				return _List_fromArray(
 					[linkToList]);
@@ -6820,6 +6841,17 @@ var author$project$Main$horizontalNav = function (model) {
 				_List_fromArray(
 					[
 						elm$html$Html$text('Posts')
+					])),
+				elm$html$Html$text(' - '),
+				A2(
+				elm$html$Html$a,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$href(author$project$Routes$elmCssPath)
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text('Elm-Css')
 					]))
 			]));
 };
@@ -7232,6 +7264,13 @@ var author$project$Pages$Edit$view = F2(
 					]));
 		}
 	});
+var author$project$Pages$ElmCss$view = A2(
+	elm$html$Html$div,
+	_List_Nil,
+	_List_fromArray(
+		[
+			elm$html$Html$text('Edd')
+		]));
 var author$project$Routes$playerPath = function (id) {
 	return author$project$Routes$pathFor(
 		author$project$Shared$PlayerRoute(id));
@@ -7395,6 +7434,8 @@ var author$project$Main$pageWithData = F2(
 			case 'PlayerRoute':
 				var id = _n0.a;
 				return A2(author$project$Pages$Edit$view, players, id);
+			case 'ElmCssRoute':
+				return author$project$Pages$ElmCss$view;
 			default:
 				return author$project$Main$notFoundView;
 		}
